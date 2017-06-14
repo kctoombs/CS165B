@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+import sys
+import math
+import numpy as np
+import operator
+
+k = sys.argv[1]
+trainingSet = sys.argv[2]
+testingSet = sys.argv[3]
+trainData = []   #Holds data from the training set
+trainLabels = [] #Holds labels associated with training data
+labels = [0] * 10 #Labels of k nearest points
+counter = 1       #Number of the test data
+
+with open(trainingSet) as f:
+    firstLine = f.readline().split()
+    numPoints = firstLine[0]  #Number of points
+    dim = int(firstLine[1])   #Dimension of points
+    for line in f.readlines():
+        data = line.split()
+        trainData.append([float(num) for num in line.split()])
+        trainLabels.append(line[-2]) #Add the label to trainLabels
+
+#Remove labels from trainData
+for i in range(0, len(trainData)):
+    del(trainData[i][-1])
+
+trainDataCopy = trainData[:]
+trainLabelsCopy = trainLabels[:]
+    
+def minDist(point, trainingPoints):
+    #point is current point from testing set
+    minDistance = 1.79 * (10 ** 308)
+    indexOfPoint = 0
+    for i in range(0, len(trainingPoints)):
+        result = 0.0
+        trainData = trainingPoints[i]
+        subtraction = list(map(operator.sub, trainData, point))
+        multiplication = [num ** 2 for num in subtraction]
+        for nums in multiplication:
+            result += nums
+        result = result ** (0.5)
+        if(result < minDistance):
+            minDistance = result
+            indexOfPoint = i
+    return indexOfPoint
+
+def getLabel(theList):
+    maximum = 0  
+    for i in range(0, len(theList)):
+        if(theList[i] > maximum):
+            maximum = i
+    return maximum
+
+def clearList(theList):
+    for i in range(0, len(theList)):
+        theList[i] = 0
+        
+
+with open(testingSet) as f:
+    firstLine = f.readline().split()
+    testExamples = firstLine[0]
+    testDim = firstLine[1]
+    for line in f.readlines():
+        curPoint = [float(num) for num in line.split()]
+        #Find k nearest points
+        for i in range(0, int(k)):
+            index = minDist(curPoint, trainDataCopy)  #Find the closest point
+            label = int(trainLabelsCopy[index]) #Get the label associated with that point
+            labels[label] += 1      #Increase the label count
+            del trainDataCopy[index]    #Remove the closest point from the train data
+            del trainLabelsCopy[index]  #Remove the label of that point
+        trainDataCopy = trainData[:]      #Reset
+        trainLabelsCopy = trainLabels[:]  #Reset
+        finalLabel = getLabel(labels)
+        clearList(labels)
+        sys.stdout.write(str(counter))
+        counter += 1
+        sys.stdout.write(". ")
+        for num in curPoint:
+            formattedNum = int(num*10)/float(10)
+            sys.stdout.write(str(formattedNum))
+            sys.stdout.write(" ")
+        sys.stdout.write("-- ")
+        sys.stdout.write(str(finalLabel))
+        print("")
+    
+#x = minDist([0,0], [[10, 10], [5, 5], [15, 15], [1, 1]])
+#print(x)
+
+#Find the minimum distance k times. Each time, remove the point in the training data that is the closest. Then use a hashmap to count the number of times that a label occurs
+    
+'''
+Make list of size k, initialize all entries to 0, 0.
+First entry in the tuple will be the distance, second entry will be the label
+Fill up the array with the first k points
+For all successive points, calculate smallest distance and replace the point in
+the array that is farthest from the test point only if the new distance is smaller
+'''

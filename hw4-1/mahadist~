@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+import sys
+import math
+import numpy as np
+
+trainingSet = sys.argv[1]
+testingSet = sys.argv[2]
+trainData = []   #Holds data from the training set
+
+with open(trainingSet) as f:
+    firstLine = f.readline().split()
+    numPoints = firstLine[0]  #Number of points
+    dim = int(firstLine[1])   #Dimension of points
+    for line in f.readlines():
+        trainData.append([float(num) for num in line.split()])
+
+#Compute centroid
+centroid = np.mean(trainData[0:-1], 0)
+print("Centroid:")
+for num in centroid:
+    formattedNum = str(round(num, 1))
+    sys.stdout.write(formattedNum)
+    sys.stdout.write(" ")
+print("")
+
+#Compute covariance matrix
+matrix = np.asmatrix(trainData)
+for i in range(0, len(matrix)):
+    matrix[i] -= centroid
+covarianceM = matrix.getT() * matrix
+covarianceM *= (1/int(numPoints))
+covarianceM = np.asarray(covarianceM)
+
+#Print covariance matrix
+print("Covariance matrix:")
+for i in range(0, dim):
+    for j in range(0, dim):
+        sys.stdout.write(str(round(covarianceM[i][j],1)))
+        sys.stdout.write(" ")
+        if(j == (dim - 1)):
+            print("")
+
+print("Distances:")
+counter = 1
+with open(testingSet) as f:
+    firstLine = f.readline().split()
+    numPoints = firstLine[0]  #Number of points
+    dim = int(firstLine[1])   #Dimension of points
+    for l in f.readlines():
+        diffM = [float(num) for num in l.split()]
+        point = diffM[:]
+        c = np.array(centroid)
+        d = np.array(diffM)
+        diffM = d - c  #x-y part of equation
+        diffM = np.asmatrix(diffM)
+        dist = diffM * np.asmatrix(covarianceM).getI() * diffM.getT()
+        dist = str(round(dist.item(0), 2))
+        numData = str(counter) + ". " 
+        sys.stdout.write(numData)
+        counter += 1
+        for n in point:
+            number = int(n*10)/float(10)
+            sys.stdout.write(str(number))
+            sys.stdout.write(" ")
+        sys.stdout.write("-- ")
+        sys.stdout.write(str(dist))
+        print("")
